@@ -1,0 +1,15 @@
+Company: RELIANCE
+Ticker: RELIANCE.NS
+
+DATA SPLIT
+Training: 70%
+Validation: 15%
+Testing: 15%
+
+Training samples: 1648
+Validation samples: 366
+Testing samples: 366
+
+Total epochs trained: 12
+Best validation loss: 0.010113
+Best validation MAE: 0.088734

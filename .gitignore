@@ -1,0 +1,127 @@
+
+---
+
+## `.gitignore`
+
+Use this:
+
+```gitignore
+# ==========================================
+# Python
+# ==========================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.so
+
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+
+# ==========================================
+# Virtual Environment
+# ==========================================
+
+venv/
+env/
+ENV/
+.venv/
+
+
+# ==========================================
+# Jupyter Notebook
+# ==========================================
+
+.ipynb_checkpoints/
+
+
+# ==========================================
+# Environment Variables
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+
+# ==========================================
+# Streamlit
+# ==========================================
+
+.streamlit/secrets.toml
+
+
+# ==========================================
+# IDE / Editors
+# ==========================================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+# ==========================================
+# Operating System Files
+# ==========================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# ==========================================
+# Logs
+# ==========================================
+
+*.log
+logs/
+
+
+# ==========================================
+# Temporary Files
+# ==========================================
+
+tmp/
+temp/
+*.tmp
+*.bak
+
+
+# ==========================================
+# Python Test / Cache
+# ==========================================
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+
+# ==========================================
+# Large / Generated Model Files (Optional)
+# ==========================================
+
+# Uncomment these if your trained models
+# are too large to upload to GitHub
+
+# models/**/*.keras
+# models/**/*.h5
+# models/**/*.pkl
+
+
+# ==========================================
+# Local Data Files (Optional)
+# ==========================================
+
+# Uncomment if datasets are too large
+data/raw/
+data/processed/
+*.csv
+

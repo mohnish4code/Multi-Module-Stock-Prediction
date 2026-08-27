@@ -1,0 +1,15 @@
+Company: SBIN
+Ticker: SBIN.NS
+
+DATA SPLIT
+Training: 70%
+Validation: 15%
+Testing: 15%
+
+Training samples: 1648
+Validation samples: 366
+Testing samples: 366
+
+Total epochs trained: 15
+Best validation loss: 0.038461
+Best validation MAE: 0.169650

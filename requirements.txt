@@ -1,0 +1,12 @@
+yfinance
+pandas
+streamlit
+plotly
+tensorflow
+scikit-learn
+joblib
+ta
+matplotlib
+transformers
+torch
+feedparser

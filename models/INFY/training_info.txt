@@ -1,0 +1,15 @@
+Company: INFY
+Ticker: INFY.NS
+
+DATA SPLIT
+Training: 70%
+Validation: 15%
+Testing: 15%
+
+Training samples: 1648
+Validation samples: 366
+Testing samples: 366
+
+Total epochs trained: 22
+Best validation loss: 0.003217
+Best validation MAE: 0.044376

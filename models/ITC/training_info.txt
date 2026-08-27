@@ -1,0 +1,15 @@
+Company: ITC
+Ticker: ITC.NS
+
+DATA SPLIT
+Training: 70%
+Validation: 15%
+Testing: 15%
+
+Training samples: 1648
+Validation samples: 366
+Testing samples: 366
+
+Total epochs trained: 21
+Best validation loss: 0.001234
+Best validation MAE: 0.029309

@@ -1,0 +1,15 @@
+Company: HDFCBANK
+Ticker: HDFCBANK.NS
+
+DATA SPLIT
+Training: 70%
+Validation: 15%
+Testing: 15%
+
+Training samples: 1648
+Validation samples: 366
+Testing samples: 366
+
+Total epochs trained: 22
+Best validation loss: 0.001544
+Best validation MAE: 0.030727
