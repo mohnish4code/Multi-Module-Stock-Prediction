@@ -1,15 +1,18 @@
-Company: HINDUNILVR
+Company: Hindustan Unilever
 Ticker: HINDUNILVR.NS
+Trained: 2026-08-27 19:40
 
-DATA SPLIT
-Training: 70%
-Validation: 15%
-Testing: 15%
+Target: next-day log return
+Features: 21 stationary transforms
+Sequence length: 60
 
-Training samples: 1648
-Validation samples: 366
-Testing samples: 366
+DATA SPLIT (chronological)
+Train: 1595  Val: 356  Test: 356
 
-Total epochs trained: 17
-Best validation loss: 0.001436
-Best validation MAE: 0.029016
+HOLD-OUT TEST METRICS
+Directional accuracy: 47.19%
+  (baseline always-up: 46.91%)
+High-conviction accuracy: 47.46% (top 33.1% of days)
+MAPE: 0.95%
+MAE:  Rs 21.8
+RMSE: Rs 29.97

@@ -116,7 +116,7 @@ try:
 
         company_input=input_company,
 
-        period="1y",
+        period=None,
 
         sequence_length=60
 

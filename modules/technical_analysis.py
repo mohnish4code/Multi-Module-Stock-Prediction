@@ -37,12 +37,36 @@ def analyze_technical_indicators(df):
     # ---------------------------------------------
     # CALCULATE TECHNICAL INDICATORS
     #
-    # We use the shared feature engineering module.
+    # We use the shared feature engineering module,
+    # but only if the indicators are not already
+    # present. Callers such as app.py / system.py
+    # pass a DataFrame that has already been through
+    # add_technical_indicators(); re-running it there
+    # would recompute every rolling window on an
+    # already-truncated series and drop another ~50
+    # rows for no reason.
     # ---------------------------------------------
 
-    df = add_technical_indicators(
-        df
+    required_indicators = [
+        "SMA_20",
+        "SMA_50",
+        "EMA_20",
+        "RSI",
+        "MACD",
+        "MACD_Signal",
+        "Volatility"
+    ]
+
+    already_engineered = all(
+        column in df.columns
+        for column in required_indicators
     )
+
+    if not already_engineered:
+
+        df = add_technical_indicators(
+            df
+        )
 
 
     # ---------------------------------------------

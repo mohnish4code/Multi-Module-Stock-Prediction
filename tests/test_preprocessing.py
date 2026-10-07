@@ -49,7 +49,7 @@ df = get_stock_data(
 
     ticker="TCS.NS",
 
-    period="1y",
+    period="10y",
 
     interval="1d"
 )
@@ -88,7 +88,9 @@ print(
     X_test,
     y_test,
 
-    scaler
+    feature_scaler,
+    target_scaler,
+    meta
 
 ) = prepare_train_val_test_data(
 

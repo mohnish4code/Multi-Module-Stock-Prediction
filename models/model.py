@@ -1,67 +1,44 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import Input, LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import Huber
 
 
 def build_lstm_model(
     sequence_length,
-    num_features
+    num_features,
 ):
     """
-    Builds an LSTM model for stock price prediction.
+    LSTM regressor for the next-day *log return* of Close.
+
+    Notes
+    -----
+    * Huber loss instead of plain MSE: standardised
+      daily returns have fat tails (+/- 6 sigma days),
+      and MSE lets those few days dominate the gradient
+      so the model collapses to predicting the mean.
+    * Recurrent dropout for a little regularisation on
+      the ~1600 training sequences.
     """
 
-    model = Sequential()
+    # Deliberately small. On ~1600 noisy daily sequences
+    # a 64/32 LSTM finds its best val loss within a few
+    # epochs and then just memorises noise. A compact
+    # net generalises better on this signal-to-noise.
+    model = Sequential([
+        Input(shape=(sequence_length, num_features)),
 
-    # First LSTM layer
-    model.add(
-        LSTM(
-            units=64,
-            return_sequences=True,
-            input_shape=(
-                sequence_length,
-                num_features
-            )
-        )
-    )
+        LSTM(units=24),
+        Dropout(0.35),
 
-    model.add(
-        Dropout(0.2)
-    )
+        Dense(units=8, activation="relu"),
+        Dense(units=1),
+    ])
 
-    # Second LSTM layer
-    model.add(
-        LSTM(
-            units=32
-        )
-    )
-
-    model.add(
-        Dropout(0.2)
-    )
-
-    # Dense layers
-    model.add(
-        Dense(
-            units=16,
-            activation="relu"
-        )
-    )
-
-    # Final prediction layer
-    model.add(
-        Dense(
-            units=1
-        )
-    )
-
-    # Compile model
     model.compile(
-        optimizer=Adam(
-            learning_rate=0.001
-        ),
-        loss="mean_squared_error",
-        metrics=["mae"]
+        optimizer=Adam(learning_rate=7e-4),
+        loss=Huber(delta=1.0),
+        metrics=["mae"],
     )
 
     return model

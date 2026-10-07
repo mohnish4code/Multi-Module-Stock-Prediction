@@ -2,6 +2,63 @@ import yfinance as yf
 
 
 # =================================================
+# BATCH QUOTES  (for the watchlist strip)
+# =================================================
+
+def get_quotes(tickers):
+    """
+    One network call for every ticker. Returns:
+        { ticker: {"price": float, "prev": float,
+                   "change": float, "change_pct": float} }
+    Missing tickers are simply omitted.
+    """
+
+    if not tickers:
+        return {}
+
+    out = {}
+
+    try:
+        data = yf.download(
+            list(tickers),
+            period="7d",
+            interval="1d",
+            auto_adjust=True,
+            progress=False,
+            threads=False,
+            group_by="ticker",
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"quote fetch failed: {exc}")
+        return {}
+
+    for t in tickers:
+        try:
+            if len(tickers) == 1:
+                closes = data["Close"].dropna()
+            else:
+                closes = data[t]["Close"].dropna()
+
+            if len(closes) < 2:
+                continue
+
+            price = float(closes.iloc[-1])
+            prev = float(closes.iloc[-2])
+            change = price - prev
+
+            out[t] = {
+                "price": price,
+                "prev": prev,
+                "change": change,
+                "change_pct": (change / prev) * 100.0 if prev else 0.0,
+            }
+        except Exception:  # noqa: BLE001, PERF203
+            continue
+
+    return out
+
+
+# =================================================
 # FETCH HISTORICAL STOCK DATA
 # =================================================
 
@@ -136,42 +193,6 @@ def get_stock_data(
 
         print(
             f"\nError fetching data: {e}"
-        )
-
-        return None
-
-
-# =================================================
-# FETCH COMPANY INFORMATION
-# =================================================
-
-def get_stock_info(
-    ticker
-):
-
-    try:
-
-        print(
-            f"\nFetching company information "
-            f"for {ticker}..."
-        )
-
-
-        stock = yf.Ticker(
-            ticker
-        )
-
-
-        info = stock.info
-
-
-        return info
-
-
-    except Exception as e:
-
-        print(
-            f"\nError fetching company information: {e}"
         )
 
         return None

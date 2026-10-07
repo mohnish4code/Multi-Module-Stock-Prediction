@@ -1,11 +1,3 @@
-
----
-
-## `.gitignore`
-
-Use this:
-
-```gitignore
 # ==========================================
 # Python
 # ==========================================
@@ -125,3 +117,6 @@ data/raw/
 data/processed/
 *.csv
 
+
+# training run log
+training/retrain_log.txt

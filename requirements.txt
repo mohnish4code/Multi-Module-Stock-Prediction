@@ -1,12 +1,10 @@
 yfinance
 pandas
-streamlit
-plotly
-tensorflow
+numpy
 scikit-learn
 joblib
 ta
-matplotlib
-transformers
-torch
+tensorflow
+streamlit
+plotly
 feedparser

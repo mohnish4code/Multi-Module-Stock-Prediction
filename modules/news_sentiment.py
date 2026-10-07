@@ -1,350 +1,15 @@
-import requests
 import re
-import feedparser
-from urllib.parse import quote
+
 from modules.news_collection import get_stock_news
 
-# =================================================
-# COMPANY SEARCH TERMS
-# =================================================
-
-COMPANY_SEARCH_TERMS = {
-
-    # =================================================
-    # TATA CONSULTANCY SERVICES
-    # =================================================
-
-    "TCS": {
-
-        "query": "Tata Consultancy Services",
-
-        "keywords": [
-
-            "tata consultancy services",
-            "tata consultancy",
-            "tcs limited",
-            "tcs ltd"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # RELIANCE INDUSTRIES
-    # =================================================
-
-    "RELIANCE": {
-
-        "query": "Reliance Industries",
-
-        "keywords": [
-
-            "reliance industries",
-            "reliance industries limited",
-            "reliance jio",
-            "jio platforms",
-            "mukesh ambani",
-            "ril"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # INFOSYS
-    # =================================================
-
-    "INFY": {
-
-        "query": "Infosys Limited",
-
-        "keywords": [
-
-            "infosys limited",
-            "infosys",
-            "infy"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # HDFC BANK
-    # =================================================
-
-    "HDFCBANK": {
-
-        "query": "HDFC Bank",
-
-        "keywords": [
-
-            "hdfc bank limited",
-            "hdfc bank"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # ICICI BANK
-    # =================================================
-
-    "ICICIBANK": {
-
-        "query": "ICICI Bank",
-
-        "keywords": [
-
-            "icici bank limited",
-            "icici bank"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # STATE BANK OF INDIA
-    # =================================================
-
-    "SBIN": {
-
-        "query": "State Bank of India",
-
-        "keywords": [
-
-            "state bank of india",
-            "state bank",
-            "sbi bank"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # WIPRO
-    # =================================================
-
-    "WIPRO": {
-
-        "query": "Wipro Limited",
-
-        "keywords": [
-
-            "wipro limited",
-            "wipro"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # HINDUSTAN UNILEVER
-    # =================================================
-
-    "HINDUNILVR": {
-
-        "query": "Hindustan Unilever",
-
-        "keywords": [
-
-            "hindustan unilever",
-            "hindustan unilever limited",
-            "hul india"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # ITC LIMITED
-    # =================================================
-
-    "ITC": {
-
-        "query": "ITC Limited India",
-
-        "keywords": [
-
-            "itc limited",
-            "itc india"
-
-        ]
-
-    },
-
-
-    # =================================================
-    # BHARTI AIRTEL
-    # =================================================
-
-    "BHARTIARTL": {
-
-        "query": "Bharti Airtel",
-
-        "keywords": [
-
-            "bharti airtel",
-            "airtel india",
-            "airtel limited"
-
-        ]
-
-    }
-
-}
 
 # =================================================
-# GET COMPANY NEWS
+# NEWS SENTIMENT  (keyword-based)
+#
+# get_stock_news() (modules/news_collection.py) does
+# the real-time Google News RSS fetch. This module
+# scores the headlines it returns.
 # =================================================
-
-def get_company_news(
-    company_name,
-    ticker=None,
-    max_results=10
-):
-    """
-    Fetches recent company-specific news using
-    Google News RSS.
-    """
-
-    company_key = company_name.upper()
-
-
-    # -------------------------------------------------
-    # GET COMPANY SEARCH INFORMATION
-    # -------------------------------------------------
-
-    company_info = COMPANY_SEARCH_TERMS.get(
-        company_key,
-        {
-            "query": company_name,
-            "keywords": [
-                company_name.lower()
-            ]
-        }
-    )
-
-
-    search_query = company_info["query"]
-
-
-    # -------------------------------------------------
-    # CREATE GOOGLE NEWS RSS URL
-    # -------------------------------------------------
-
-    encoded_query = quote(
-        f'"{search_query}"'
-    )
-
-
-    url = (
-        "https://news.google.com/rss/search?"
-        f"q={encoded_query}"
-        "&hl=en-IN"
-        "&gl=IN"
-        "&ceid=IN:en"
-    )
-
-
-    # -------------------------------------------------
-    # FETCH RSS NEWS
-    # -------------------------------------------------
-
-    try:
-
-        feed = feedparser.parse(
-            url
-        )
-
-
-        processed_news = []
-
-
-        # -------------------------------------------------
-        # PROCESS NEWS
-        # -------------------------------------------------
-
-        for item in feed.entries:
-
-            title = item.get(
-                "title",
-                ""
-            )
-
-
-            link = item.get(
-                "link",
-                ""
-            )
-
-
-            # Google News titles often look like:
-            #
-            # Headline - Source
-            #
-            # Extract source if available.
-            source = item.get(
-                "source",
-                {}
-            )
-
-
-            if isinstance(source, dict):
-
-                publisher = source.get(
-                    "title",
-                    "Unknown"
-                )
-
-            else:
-
-                publisher = "Unknown"
-
-
-            if not title:
-
-                continue
-
-
-            processed_news.append(
-
-                {
-
-                    "title": title,
-
-                    "publisher": publisher,
-
-                    "link": link
-
-                }
-
-            )
-
-
-            # Stop after requested number
-            if len(processed_news) >= max_results:
-
-                break
-
-
-        return processed_news
-
-
-    except Exception as error:
-
-        print(
-            f"Error fetching news: {error}"
-        )
-
-        return []
 
 
 # =================================================
@@ -517,18 +182,31 @@ def analyze_headline_sentiment(
 def analyze_company_sentiment(
     company_name,
     ticker=None,
-    max_results=10
+    max_results=None
 ):
     """
-    Fetches relevant company news and performs
-    sentiment analysis.
+    Fetches the freshest available company news and
+    runs keyword sentiment analysis over it.
+
+    The returned dict carries `fetched_at` and
+    `most_recent` so the UI can prove the feed is live.
     """
 
+    import datetime as _dt
+
+    # Prefer the ticker so the curated Google News query
+    # is actually hit (callers pass the long display
+    # name, which never matches the short keys).
+    lookup = (
+        ticker.replace(".NS", "") if ticker else company_name
+    )
 
     news = get_stock_news(
-    company_name=company_name,
-    max_news=max_results
-)
+        company_name=lookup,
+        max_news=max_results,
+    )
+
+    fetched_at = _dt.datetime.now().strftime("%d %b %Y, %H:%M")
 
     # =================================================
     # HANDLE NO RELEVANT NEWS
@@ -551,6 +229,12 @@ def analyze_company_sentiment(
             "sentiment_score": 0.0,
 
             "sentiment_label": "UNKNOWN",
+
+            "fetched_at": fetched_at,
+
+            "most_recent": None,
+
+            "newest_age_days": None,
 
             "news": []
 
@@ -628,6 +312,13 @@ def analyze_company_sentiment(
                     ""
                 ),
 
+                "published_str": item.get(
+                    "published_str",
+                    "date unknown"
+                ),
+
+                "age_days": item.get("age_days"),
+
                 "sentiment": sentiment,
 
                 "score": score
@@ -681,6 +372,8 @@ def analyze_company_sentiment(
     # RETURN RESULTS
     # =================================================
 
+    newest = news[0] if news else None
+
     return {
 
         "company": company_name,
@@ -696,6 +389,12 @@ def analyze_company_sentiment(
         "sentiment_score": overall_score,
 
         "sentiment_label": overall_sentiment,
+
+        "fetched_at": fetched_at,
+
+        "most_recent": newest.get("published_str") if newest else None,
+
+        "newest_age_days": newest.get("age_days") if newest else None,
 
         "news": analyzed_news
 
