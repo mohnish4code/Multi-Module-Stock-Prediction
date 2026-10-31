@@ -15,8 +15,8 @@ RUN useradd --create-home --uid 1000 app
 FROM base AS api
 # CPU-only torch keeps the image ~1.5 GB smaller than the default CUDA wheel.
 RUN pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
-COPY requirements-core.txt requirements-api.txt ./
-RUN pip install -r requirements-api.txt
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
 COPY configs ./configs
 COPY src ./src
 COPY train.py backtest.py ./
@@ -31,6 +31,7 @@ FROM base AS ui
 COPY requirements-ui.txt ./
 RUN pip install -r requirements-ui.txt
 COPY ui ./ui
+COPY .streamlit ./.streamlit
 USER app
 EXPOSE 8501
 CMD ["streamlit", "run", "ui/app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]

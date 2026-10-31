@@ -21,6 +21,7 @@ apply_theme()
 MODEL_LABELS = {
     "buy_and_hold": "Buy & hold", "xgboost": "XGBoost", "lstm": "LSTM", "transformer": "Transformer",
     "arima": "ARIMA", "majority": "Majority direction", "persistence": "Persistence", "random_walk": "Random walk",
+    "xgboost+news": "XGBoost + news", "lstm+news": "LSTM + news",
 }
 
 
@@ -59,7 +60,7 @@ def fmt_date(iso: str | None) -> str:
 def dark_layout(fig: go.Figure, height: int) -> None:
     fig.update_layout(height=height, template="plotly_dark", paper_bgcolor=BG, plot_bgcolor=BG,
                       margin=dict(l=8, r=8, t=8, b=8), hovermode="x unified",
-                      legend=dict(orientation="h", y=1.06, x=0, font=dict(size=11)))
+                      legend=dict(orientation="h", y=1.06, x=0, font=dict(size=11, color=TEXT)))
     fig.update_xaxes(gridcolor=BORDER)
     fig.update_yaxes(gridcolor=BORDER)
 

@@ -16,6 +16,19 @@ A decision engine turns the three into BUY / HOLD / SELL. Everything is served t
 service and a Streamlit terminal, and every model is evaluated with a leakage-free walk-forward
 backtest against simple baselines.
 
+![Analysis view](docs/images/analysis.png)
+
+<table>
+  <tr>
+    <td><img src="docs/images/signals.png" alt="Module signals and decision"></td>
+    <td><img src="docs/images/backtest.png" alt="Backtest vs baselines"></td>
+  </tr>
+  <tr>
+    <td align="center">Module signals and the coordinated decision</td>
+    <td align="center">Walk-forward equity curves and baseline comparison</td>
+  </tr>
+</table>
+
 ## Results
 
 Walk-forward backtest, 6 one-year test folds per stock (Sep 2020 – Oct 2026, 1,512 trading days),
@@ -47,9 +60,8 @@ What this shows:
 - **Tuning did not transfer.** Optuna lowered validation error, but tuned XGBoost did slightly worse on
   the test years than the hand-set version.
 
-The first version of this project reported ~1% MAPE and 45–51% direction accuracy from a single
-split. Rebuilding the evaluation found an evaluation bug, a one-day label leak at the split boundaries
-and an LSTM signal that never left "NEUTRAL"; the numbers above are what remains after fixing those.
+The first version of this project looked better on paper; see [What changed in v2](#what-changed-in-v2)
+for the bugs behind that.
 
 ![Summary](results/plots/summary_heatmap.png)
 ![ICICI Bank equity curves](results/plots/ICICIBANK_equity.png)
@@ -163,10 +175,29 @@ src/
   pipeline.py     analyse(): the one code path used by the API and the CLI
 ui/               Streamlit app (talks to the API only)
 notebooks/        data exploration and results analysis
+docs/images/      screenshots used in this README
 results/          metrics.csv, out-of-sample predictions, news features, plots
 tests/            77 offline pytest tests
 backtest.py  train.py  tune.py
 ```
+
+## What changed in v2
+
+v1 was a Keras LSTM per stock, scored on one 70/15/15 split, with keyword news sentiment and a
+Streamlit dashboard. It reported ~1% MAPE and 45–51% direction accuracy. Rebuilding it found:
+
+- **An evaluation bug**: the test set was rescaled with a freshly fitted scaler, and targets were
+  inverted with a different scaler than the one that scaled them.
+- **A one-day label leak** at every split boundary (now closed by the embargo).
+- **A signal that never fired**: with a 1% "neutral" band, the LSTM's forecast was NEUTRAL on all
+  15,120 backtest days. The band is now 0.10%, in line with the size of the forecasts.
+- **Two decision paths**: the app and the CLI used different rules and could disagree; there is now
+  one decision engine.
+
+On top of the fixes, v2 adds the walk-forward backtest and baselines, XGBoost and a PyTorch
+Transformer, the PyTorch port of the LSTM (checked against the Keras version before TensorFlow was
+dropped), Optuna tuning, FinBERT features from ~63,600 backfilled headlines, MLflow tracking, the API,
+Docker and CI.
 
 ## Limitations
 
