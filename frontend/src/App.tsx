@@ -117,7 +117,7 @@ export default function App() {
             ))}
           </nav>
 
-          {tab === "analysis" && ticker && <AnalysisView ticker={ticker} backtest={backtest.data} theme={theme} />}
+          {tab === "analysis" && ticker && <AnalysisView ticker={ticker} theme={theme} />}
           {tab === "backtest" && (backtest.error ? <ErrorBox message={backtest.error} onRetry={backtest.reload} /> :
             backtest.data ? <BacktestView key={ticker} data={backtest.data} theme={theme} /> :
               <div className="skeleton" style={{ height: 480 }} />)}

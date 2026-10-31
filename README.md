@@ -32,7 +32,7 @@ simple baselines.
     <td colspan="2"><img src="docs/images/leaderboard.png" alt="Leaderboard"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">Leaderboard: every stock × model by direction accuracy, Sharpe or return vs buy & hold</td>
+    <td colspan="2" align="center">Leaderboard: every stock × model by Sharpe ratio or return vs buy & hold</td>
   </tr>
 </table>
 

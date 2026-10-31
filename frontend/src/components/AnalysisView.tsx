@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 
 import { api } from "../api";
 import { num, price, signed, signedPct, timeAgo, tone } from "../format";
-import type { Backtest, Prediction, Sentiment } from "../types";
+import type { Prediction, Sentiment } from "../types";
 import { useApi } from "../useApi";
 import { PriceChart } from "./PriceChart";
 
@@ -10,7 +10,7 @@ import { PriceChart } from "./PriceChart";
 const cache = new Map<string, { at: number; data: Prediction }>();
 const MAX_AGE_MS = 10 * 60_000;
 
-export function AnalysisView({ ticker, backtest, theme }: { ticker: string; backtest: Backtest | null; theme: string }) {
+export function AnalysisView({ ticker, theme }: { ticker: string; theme: string }) {
   const [force, setForce] = useState(0);
   const bypassCache = useRef(false);
   const refresh = () => {
@@ -30,11 +30,10 @@ export function AnalysisView({ ticker, backtest, theme }: { ticker: string; back
   if (error) return <ErrorBox message={error} onRetry={refresh} />;
   if (!data || loading) return <AnalysisSkeleton />;
 
-  const served = backtest?.metrics.find((m) => m.model === data.forecast.model && m.fold === "all");
   return (
     <div className="stack">
       <SignalBanner data={data} onRefresh={refresh} />
-      <Kpis data={data} served={served ?? null} />
+      <Kpis data={data} />
       <PriceChart history={data.history} forecast={data.forecast} theme={theme} />
       <div className="grid-3">
         <ModelCard data={data} />
@@ -61,16 +60,17 @@ function SignalBanner({ data, onRefresh }: { data: Prediction; onRefresh: () => 
   );
 }
 
-function Kpis({ data, served }: { data: Prediction; served: Backtest["metrics"][number] | null }) {
+function Kpis({ data }: { data: Prediction }) {
   const f = data.forecast;
   const d = data.decision;
+  const n = data.news;
   return (
     <div className="kpis">
       <Kpi label="Predicted close" value={price(f.predicted_price)} sub={`${f.model} · next session`} />
       <Kpi label="Expected move" value={signedPct(f.predicted_change_pct)} sub={`${signed(f.predicted_change)} vs last close`}
         cls={tone(f.predicted_change)} />
-      <Kpi label="Backtest direction acc." value={served?.dir_acc != null ? `${served.dir_acc.toFixed(1)}%` : "–"}
-        sub={served?.p_vs_50 != null ? `p = ${served.p_vs_50.toFixed(2)} vs coin flip · ${served.n.toLocaleString()} days` : "run backtest.py"} />
+      <Kpi label="News sentiment" value={n.sentiment_label} sub={`score ${num(n.sentiment_score)} · ${n.total_news} headlines`}
+        cls={tone(n.sentiment_label)} />
       <Kpi label="Risk" value={d.risk_level} sub={`score ${d.risk_score}/10`}
         cls={d.risk_level === "HIGH" ? "down" : d.risk_level === "LOW" ? "up" : "flat"} />
     </div>

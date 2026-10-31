@@ -7,7 +7,6 @@ import { useApi } from "../useApi";
 import { ErrorBox } from "./AnalysisView";
 
 const METRICS = {
-  dir_acc: { label: "Direction accuracy", centre: 50, span: 4, fmt: (v: number) => `${v.toFixed(1)}%` },
   strat_sharpe: { label: "Sharpe (net)", centre: 0, span: 1, fmt: (v: number) => v.toFixed(2) },
   excess_cagr_vs_bh: { label: "CAGR minus buy & hold", centre: 0, span: 0.3, fmt: (v: number) => `${(v * 100).toFixed(1)}%` },
 } as const;
@@ -89,8 +88,8 @@ export function Leaderboard({ onSelect }: { onSelect: (ticker: string) => void }
         </table>
       </div>
       <p className="muted small">
-        1,512 test days per stock (Sep 2020 – Oct 2026). Green = better than {metric === "dir_acc" ? "a coin flip" :
-        metric === "strat_sharpe" ? "zero" : "buy & hold"}. Click a stock to open it.
+        1,512 test days per stock (Sep 2020 – Oct 2026). Green = better than {metric === "strat_sharpe" ? "zero" :
+        "buy & hold"}. Click a stock to open it.
       </p>
     </div>
   );

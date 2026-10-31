@@ -123,6 +123,8 @@ export interface MetricRow {
   bh_sharpe: number | null;
   bh_cagr: number | null;
   bh_max_dd?: number | null;
+  strat_total_return?: number | null;
+  bh_total_return?: number | null;
   exposure: number | null;
   excess_cagr_vs_bh?: number | null;
 }
