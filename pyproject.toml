@@ -1,7 +1,7 @@
 [project]
 name = "alphastream"
 version = "2.0.0"
-description = "Multi-module NSE stock forecasting with honest walk-forward evaluation, an API and a Streamlit terminal."
+description = "Multi-module NSE stock forecasting with honest walk-forward evaluation, a FastAPI service and a React web app."
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }

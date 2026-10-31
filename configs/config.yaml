@@ -74,7 +74,7 @@ serving:
   model: xgboost
   feature_set: news       # base | news
   models_dir: models
-  history_bars: 90
+  history_bars: 260   # one year of candles for the UI chart
 
 signals:
   # Predicted moves are small (median |pred| ~0.07%), so the label band is 0.10%.

@@ -12,20 +12,27 @@ Airtel, L&T, HUL, ITC), combining three signals:
 2. **Technical rules**: RSI, SMA trend, MACD and volatility.
 3. **Live news sentiment**: Google News headlines scored with FinBERT.
 
-A decision engine turns the three into BUY / HOLD / SELL. Everything is served through a FastAPI
-service and a Streamlit terminal, and every model is evaluated with a leakage-free walk-forward
-backtest against simple baselines.
+A decision engine turns the three into BUY / HOLD / SELL. A FastAPI service serves the forecasts and
+a React + TypeScript web app (candlestick charts, model comparisons, a cross-stock leaderboard, light
+and dark themes), and every model is evaluated with a leakage-free walk-forward backtest against
+simple baselines.
 
 ![Analysis view](docs/images/analysis.png)
 
 <table>
   <tr>
-    <td><img src="docs/images/signals.png" alt="Module signals and decision"></td>
+    <td><img src="docs/images/decision.png" alt="Module signals and decision"></td>
     <td><img src="docs/images/backtest.png" alt="Backtest vs baselines"></td>
   </tr>
   <tr>
-    <td align="center">Module signals and the coordinated decision</td>
-    <td align="center">Walk-forward equity curves and baseline comparison</td>
+    <td align="center">Module votes, agreement and risk, final call, FinBERT news feed</td>
+    <td align="center">Walk-forward equity curves (toggle models) and a sortable baseline table</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/images/leaderboard.png" alt="Leaderboard"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">Leaderboard: every stock × model by direction accuracy, Sharpe or return vs buy & hold</td>
   </tr>
 </table>
 
@@ -103,7 +110,7 @@ flowchart LR
     NS --> API
     R --> API
     API --> DE{Decision engine<br/>BUY / HOLD / SELL}
-    API --> UI[Streamlit UI]
+    API --> UI[React web app]
 ```
 
 ## Quick start
@@ -117,7 +124,7 @@ python train.py                             # ~1 min; or: docker compose run --r
 docker compose up --build
 ```
 
-- UI: http://localhost:8501
+- App: http://localhost:8000 (the API also serves the built React UI)
 - API docs: http://localhost:8000/docs
 - MLflow: http://localhost:5000
 
@@ -128,11 +135,15 @@ Without Docker:
 
 ```bash
 python -m venv venv && venv\Scripts\activate        # Windows (source venv/bin/activate elsewhere)
-make install                                        # CPU torch + requirements-dev.txt
+make install                                        # CPU torch, requirements-dev.txt, npm packages
 python train.py
-make api        # terminal 1
-make ui         # terminal 2
+make ui                                             # builds the React app into frontend/dist
+make api                                            # open http://localhost:8000
 ```
+
+Without `make` (plain Windows): `cd frontend`, `npm ci`, `npm run build`, then from the project root
+`uvicorn src.api.main:app --port 8000`. For UI work with hot reload, keep the API running and use
+`npm run dev` in `frontend/` (http://localhost:5173; API calls are proxied).
 
 ## Reproducing the results
 
@@ -152,8 +163,9 @@ tickers with `TORCH_NUM_THREADS=1` is faster than one multi-threaded process.
 
 | Endpoint | Description |
 |---|---|
-| `GET /predict/{ticker}` | Forecast, technical read, news sentiment, decision and the last 90 bars. `?include_news=false` skips the news fetch. |
+| `GET /predict/{ticker}` | Forecast, technical read, news sentiment, decision and the last year of bars. `?include_news=false` skips the news fetch. |
 | `GET /backtest/{ticker}` | Walk-forward metrics per model and fold, and equity curves. |
+| `GET /summary` | Whole-period metrics for every stock and model (the leaderboard). |
 | `GET /tickers` | Configured stocks and whether a trained model is available. |
 | `GET /quotes` | Last close and day change for every stock. |
 | `GET /health` | Model availability and data date (not rate limited). |
@@ -173,11 +185,11 @@ src/
   signals/        technical rules, FinBERT/keyword sentiment, decision engine
   api/            FastAPI app and response schemas
   pipeline.py     analyse(): the one code path used by the API and the CLI
-ui/               Streamlit app (talks to the API only)
+frontend/         React + TypeScript web app (Vite, TradingView lightweight-charts)
 notebooks/        data exploration and results analysis
 docs/images/      screenshots used in this README
 results/          metrics.csv, out-of-sample predictions, news features, plots
-tests/            77 offline pytest tests
+tests/            79 offline pytest tests (plus Vitest tests in frontend/)
 backtest.py  train.py  tune.py
 ```
 
@@ -197,7 +209,7 @@ Streamlit dashboard. It reported ~1% MAPE and 45–51% direction accuracy. Rebui
 On top of the fixes, v2 adds the walk-forward backtest and baselines, XGBoost and a PyTorch
 Transformer, the PyTorch port of the LSTM (checked against the Keras version before TensorFlow was
 dropped), Optuna tuning, FinBERT features from ~63,600 backfilled headlines, MLflow tracking, the API,
-Docker and CI.
+Docker and CI, and replaces the Streamlit dashboard with a React web app.
 
 ## Limitations
 

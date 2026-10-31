@@ -29,8 +29,3 @@ matplotlib==3.11.1
 fastapi==0.162.0
 uvicorn[standard]==0.52.4
 slowapi==0.1.10
-
-# UI (also in requirements-ui.txt for the slim UI image)
-streamlit==1.62.0
-plotly==6.9.0
-httpx==0.28.1

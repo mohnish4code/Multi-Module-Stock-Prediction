@@ -27,6 +27,10 @@ htmlcov/
 # Trained models (python train.py)
 /models/
 
+# Frontend
+node_modules/
+frontend/dist/
+
 # MLflow local store
 mlflow.db
 mlruns/
@@ -45,4 +49,3 @@ desktop.ini
 logs/
 *.tmp
 *.lock
-.streamlit/secrets.toml

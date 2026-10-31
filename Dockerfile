@@ -1,7 +1,14 @@
-# Three images from one file:
-#   docker build --target api    -t alphastream-api .
-#   docker build --target ui     -t alphastream-ui .
+# Two images from one file:
+#   docker build --target api    -t alphastream .         (API + built React UI)
 #   docker build --target mlflow -t alphastream-mlflow .
+
+FROM node:20.18.0-alpine AS frontend
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
 
 FROM python:3.12.7-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -20,21 +27,12 @@ RUN pip install -r requirements.txt
 COPY configs ./configs
 COPY src ./src
 COPY train.py backtest.py ./
+COPY --from=frontend /frontend/dist ./frontend/dist
 ENV HF_HOME=/app/.cache/huggingface
 RUN mkdir -p models results data .cache && chown -R app:app /app
 USER app
 EXPOSE 8000
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
-FROM base AS ui
-COPY requirements-ui.txt ./
-RUN pip install -r requirements-ui.txt
-COPY ui ./ui
-COPY .streamlit ./.streamlit
-USER app
-EXPOSE 8501
-CMD ["streamlit", "run", "ui/app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]
 
 
 FROM base AS mlflow

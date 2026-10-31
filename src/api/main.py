@@ -2,7 +2,8 @@
 
     uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 
-Endpoints: /health, /tickers, /quotes, /predict/{ticker}, /backtest/{ticker}.
+Endpoints: /health, /tickers, /quotes, /predict/{ticker}, /backtest/{ticker}, /summary.
+The built React UI (frontend/dist) is served at /.
 Docs at /docs. Rate limit per client IP comes from RATE_LIMIT (default 30/minute).
 WARMUP=1 pre-runs every ticker in the background at startup (loads FinBERT, fills the caches).
 """
@@ -16,16 +17,18 @@ import threading
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path as FsPath
 from typing import Any
 
 from fastapi import FastAPI, Path, Query, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from src import pipeline
-from src.api.schemas import Backtest, ErrorBody, Health, Prediction, Quote, TickerInfo
+from src.api.schemas import Backtest, BacktestRow, ErrorBody, Health, Prediction, Quote, TickerInfo
 from src.config import load_config, resolve_path, resolve_ticker
 from src.data.loader import get_quotes
 from src.logging_setup import setup_logging
@@ -59,7 +62,9 @@ def warm_up(cfg: dict[str, Any]) -> None:
     logger.info("Warm-up finished in %.0fs", time.perf_counter() - started)
 
 
-def create_app(cfg: dict[str, Any] | None = None, rate_limit: str | None = None) -> FastAPI:
+def create_app(
+    cfg: dict[str, Any] | None = None, rate_limit: str | None = None, frontend_dir: str | None = None
+) -> FastAPI:
     cfg = cfg or load_config()
     limit = rate_limit or os.getenv("RATE_LIMIT", "30/minute")
     limiter = Limiter(key_func=get_remote_address, default_limits=[limit])
@@ -149,6 +154,18 @@ def create_app(cfg: dict[str, Any] | None = None, rate_limit: str | None = None)
     @limiter.limit(limit)
     def backtest(request: Request, ticker: str = TICKER_PATH) -> dict[str, Any]:
         return pipeline.backtest_summary(ticker_or_404(ticker), cfg)
+
+    @app.get("/summary", response_model=list[BacktestRow], responses=ERRORS)
+    @limiter.limit(limit)
+    def summary(request: Request) -> list[dict[str, Any]]:
+        return pipeline.backtest_overview(cfg)
+
+    # The React app (frontend/dist, built with `npm run build`) is served from the same origin.
+    ui_dir = FsPath(frontend_dir) if frontend_dir else resolve_path("frontend/dist")
+    if (ui_dir / "index.html").exists():
+        app.mount("/", StaticFiles(directory=ui_dir, html=True), name="ui")
+    else:
+        logger.info("No built UI at %s; serving the API only", ui_dir)
 
     return app
 

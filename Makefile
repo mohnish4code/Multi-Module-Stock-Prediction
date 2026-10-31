@@ -1,16 +1,18 @@
-.PHONY: install lint test news backtest backtest-news tune train api ui up down
+.PHONY: install lint test news backtest backtest-news tune train ui api dev up down
 
 PY ?= python
 
 install:
 	$(PY) -m pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
 	$(PY) -m pip install -r requirements-dev.txt
+	cd frontend && npm ci
 
 lint:
 	ruff check .
 
 test:
 	MLFLOW_DISABLE=1 pytest
+	cd frontend && npm test
 
 news:            ## backfill historical headlines (slow, resumable)
 	$(PY) -m src.data.news
@@ -29,11 +31,14 @@ tune:
 train:           ## fit serving models on all history
 	$(PY) train.py
 
-api:
-	uvicorn src.api.main:app --reload --port 8000
+ui:              ## build the React app; the API then serves it at http://localhost:8000
+	cd frontend && npm run build
 
-ui:
-	streamlit run ui/app.py
+api:
+	uvicorn src.api.main:app --port 8000
+
+dev:             ## UI with hot reload on :5173 (run `make api` in another terminal)
+	cd frontend && npm run dev
 
 up:
 	docker compose up --build -d

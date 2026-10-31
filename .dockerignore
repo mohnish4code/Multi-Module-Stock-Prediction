@@ -18,3 +18,5 @@ tests
 docs
 .env
 *.md
+frontend/node_modules
+frontend/dist

@@ -55,21 +55,22 @@ def client(cfg: dict[str, Any], stub_analysis: dict[str, Any], monkeypatch: pyte
 
     monkeypatch.setattr(pipeline, "analyse", fake_analyse)
     monkeypatch.setattr(pipeline, "backtest_summary", fake_backtest)
+    monkeypatch.setattr(pipeline, "backtest_overview", lambda _cfg: fake_backtest("TCS.NS", _cfg)["metrics"])
     monkeypatch.setattr(api, "get_quotes", lambda tickers: {"TCS.NS": {"price": 1.0, "prev": 1.0, "change": 0.0,
                                                                         "change_pct": 0.0}})
     cfg["serving"]["models_dir"] = str(tmp_path / "empty")
-    test_client = TestClient(api.create_app(cfg, rate_limit="5/minute"))
+    test_client = TestClient(api.create_app(cfg, rate_limit="5/minute", frontend_dir=str(tmp_path / "no-ui")))
     test_client.calls = calls
     return test_client
 
 
-def test_predict_returns_validated_payload(client: TestClient) -> None:
+def test_predict_returns_validated_payload(client: TestClient, cfg: dict[str, Any]) -> None:
     r = client.get("/predict/tcs?include_news=false")
     assert r.status_code == 200
     body = r.json()
     assert body["ticker"] == "TCS.NS"
     assert body["decision"]["recommendation"] in ("BUY", "HOLD", "SELL")
-    assert len(body["history"]) == 90
+    assert len(body["history"]) == cfg["serving"]["history_bars"]
     assert client.calls == [("TCS.NS", False)]
 
 
@@ -121,3 +122,19 @@ def test_tickers(client: TestClient) -> None:
     body = client.get("/tickers").json()
     assert len(body) == 10
     assert not any(t["model_ready"] for t in body)
+
+
+def test_summary(client: TestClient) -> None:
+    rows = client.get("/summary").json()
+    assert rows[0]["model"] == "xgboost"
+    assert rows[0]["fold"] == "all"
+
+
+def test_serves_built_ui_next_to_api(cfg: dict[str, Any], tmp_path: Path) -> None:
+    (tmp_path / "index.html").write_text("<!doctype html><title>AlphaStream</title>", encoding="utf-8")
+    cfg["serving"]["models_dir"] = str(tmp_path / "empty")
+    with TestClient(api.create_app(cfg, frontend_dir=str(tmp_path))) as c:
+        page = c.get("/")
+        assert page.status_code == 200
+        assert "AlphaStream" in page.text
+        assert c.get("/health").json()["models_expected"] == 10  # API routes still win

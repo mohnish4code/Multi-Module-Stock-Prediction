@@ -150,6 +150,16 @@ def analyse(
     }
 
 
+def backtest_overview(cfg: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Whole-period (fold='all') walk-forward metrics for every stock and model."""
+    cfg = cfg or load_config()
+    path = resolve_path(cfg["output"]["results_dir"]) / "metrics.csv"
+    if not path.exists():
+        raise FileNotFoundError("No backtest results yet. Run: python backtest.py")
+    metrics = pd.read_csv(path, dtype={"fold": str})
+    return metrics[metrics["fold"] == "all"].replace({np.nan: None}).to_dict("records")
+
+
 def backtest_summary(ticker: str, cfg: dict[str, Any] | None = None) -> dict[str, Any]:
     """Walk-forward results for every model on this ticker (fold='all' and per fold)."""
     cfg = cfg or load_config()
