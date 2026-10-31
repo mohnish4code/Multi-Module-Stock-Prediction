@@ -1,10 +1,6 @@
-yfinance
-pandas
-numpy
-scikit-learn
-joblib
-ta
-tensorflow
-streamlit
-plotly
-feedparser
+# Everything for local development (Python 3.12).
+# Docker images install only what they need: requirements-api.txt or requirements-ui.txt.
+-r requirements-api.txt
+-r requirements-ui.txt
+optuna==5.0.0
+mlflow==3.17.2

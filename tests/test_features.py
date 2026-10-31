@@ -1,56 +1,48 @@
-import os
-import sys
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from src.features.build import CLOSE_COLUMN, FEATURE_COLUMNS, TARGET_COLUMN, build_feature_frame
+from src.features.indicators import add_indicators
 
 
-PROJECT_ROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-)
+def test_columns_and_no_missing_values(ohlcv: pd.DataFrame) -> None:
+    frame = build_feature_frame(ohlcv)
+    assert list(frame.columns) == [*FEATURE_COLUMNS, CLOSE_COLUMN, TARGET_COLUMN]
+    assert np.isfinite(frame.to_numpy()).all()
+    assert len(frame) > 0.8 * len(ohlcv)
 
 
-sys.path.insert(
-    0,
-    PROJECT_ROOT
-)
-
-from modules.data_collection import get_stock_data
-from modules.feature_engineering import add_technical_indicators
-
-
-# Fetch TCS data
-df = get_stock_data(
-    ticker="TCS.NS",
-    period="1y",
-    interval="1d"
-)
+def test_known_values(ohlcv: pd.DataFrame) -> None:
+    frame = build_feature_frame(ohlcv)
+    close = ohlcv["Close"]
+    day = frame.index[100]
+    prev = close.index[close.index.get_loc(day) - 1]
+    nxt = close.index[close.index.get_loc(day) + 1]
+    assert np.isclose(frame.loc[day, "ret_1"], np.log(close[day] / close[prev]))
+    assert np.isclose(frame.loc[day, TARGET_COLUMN], np.log(close[nxt] / close[day]))
+    assert np.isclose(frame.loc[day, "mom_5"], np.log(close[day]) - np.log(close.shift(5)[day]))
 
 
-# Add technical indicators
-df = add_technical_indicators(df)
+def test_features_are_causal(ohlcv: pd.DataFrame) -> None:
+    """Appending future bars must not change any feature on earlier days."""
+    cut = 600
+    past = build_feature_frame(ohlcv.iloc[:cut], include_target=False)[FEATURE_COLUMNS]
+    full = build_feature_frame(ohlcv, include_target=False)[FEATURE_COLUMNS]
+    pd.testing.assert_frame_equal(past, full.loc[past.index], rtol=1e-9, atol=1e-12)
 
 
-# Print all column names
-print("\nColumns:\n")
+def test_indicators_are_causal(ohlcv: pd.DataFrame) -> None:
+    cut = 500
+    past = add_indicators(ohlcv.iloc[:cut])
+    full = add_indicators(ohlcv).iloc[:cut]
+    pd.testing.assert_frame_equal(past, full, rtol=1e-9, atol=1e-12)
 
-print(df.columns)
 
-
-# Print latest rows
-print("\nLatest Data with Indicators:\n")
-
-print(
-    df[
-        [
-            "Close",
-            "SMA_20",
-            "EMA_20",
-            "RSI",
-            "MACD",
-            "MACD_Signal",
-            "BB_Upper",
-            "BB_Middle",
-            "BB_Lower"
-        ]
-    ].tail()
-)
+def test_target_is_next_day_and_last_row_handling(ohlcv: pd.DataFrame) -> None:
+    with_target = build_feature_frame(ohlcv)
+    live = build_feature_frame(ohlcv, include_target=False)
+    assert live.index[-1] == ohlcv.index[-1]
+    assert np.isnan(live[TARGET_COLUMN].iloc[-1])
+    assert with_target.index[-1] == ohlcv.index[-2]

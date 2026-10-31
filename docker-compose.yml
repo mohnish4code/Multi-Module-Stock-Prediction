@@ -1,0 +1,43 @@
+services:
+  api:
+    build: { context: ., target: api }
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      WARMUP: "1"
+    ports: ["${API_PORT:-8000}:8000"]
+    volumes:
+      - ./models:/app/models
+      - ./results:/app/results
+      - ./data:/app/data
+      - hf-cache:/app/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    depends_on: [mlflow]
+    restart: unless-stopped
+
+  ui:
+    build: { context: ., target: ui }
+    environment:
+      API_URL: http://api:8000
+    ports: ["${UI_PORT:-8501}:8501"]
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+  mlflow:
+    build: { context: ., target: mlflow }
+    ports: ["${MLFLOW_PORT:-5000}:5000"]
+    volumes:
+      - mlflow-data:/mlflow
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
+  mlflow-data:

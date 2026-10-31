@@ -1,0 +1,60 @@
+models:
+  xgboost:
+    n_estimators: 1000
+    early_stopping_rounds: 50
+    learning_rate: 0.09044417012999183
+    max_depth: 5
+    min_child_weight: 1.7305865528376987
+    subsample: 0.6620166233961595
+    colsample_bytree: 0.5206847428165324
+    reg_lambda: 0.0016993140636380496
+  lstm:
+    units: 24
+    num_layers: 1
+    dropout: 0.4739596506464465
+    dense_units: 8
+    learning_rate: 0.0015505640334880734
+    weight_decay: 5.082158580118929e-05
+    batch_size: 32
+    epochs: 120
+    patience: 15
+  transformer:
+    d_model: 32
+    nhead: 2
+    num_layers: 2
+    dim_feedforward: 128
+    dropout: 0.272658960457281
+    dense_units: 16
+    learning_rate: 0.000677980725010759
+    weight_decay: 0.0003034410159569307
+    batch_size: 128
+    epochs: 80
+    patience: 10
+studies:
+  xgboost:
+    trials: 60
+    tickers:
+    - TCS
+    - HDFCBANK
+    - RELIANCE
+    objective: fold-0 validation MSE / Var(y), mean over tickers
+    best_value: 0.976891
+    hand_set_value: 0.995948
+  lstm:
+    trials: 20
+    tickers:
+    - TCS
+    - HDFCBANK
+    - RELIANCE
+    objective: fold-0 validation MSE / Var(y), mean over tickers
+    best_value: 0.996991
+    hand_set_value: 0.999064
+  transformer:
+    trials: 15
+    tickers:
+    - TCS
+    - HDFCBANK
+    - RELIANCE
+    objective: fold-0 validation MSE / Var(y), mean over tickers
+    best_value: 0.993765
+    hand_set_value: 1.011672

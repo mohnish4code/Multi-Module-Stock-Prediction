@@ -1,0 +1,91 @@
+# Single source of configuration for training, backtesting and serving.
+
+tickers:
+  TCS.NS:        {name: Tata Consultancy Services, folder: TCS,        news_query: "Tata Consultancy Services TCS India stock", history_query: "\"Tata Consultancy Services\" OR \"TCS share\""}
+  RELIANCE.NS:   {name: Reliance Industries,       folder: RELIANCE,   news_query: "Reliance Industries India stock", history_query: "\"Reliance Industries\""}
+  INFY.NS:       {name: Infosys,                   folder: INFY,       news_query: "Infosys India stock", history_query: "\"Infosys\""}
+  HDFCBANK.NS:   {name: HDFC Bank,                 folder: HDFCBANK,   news_query: "HDFC Bank India stock", history_query: "\"HDFC Bank\""}
+  ICICIBANK.NS:  {name: ICICI Bank,                folder: ICICIBANK,  news_query: "ICICI Bank India stock", history_query: "\"ICICI Bank\""}
+  SBIN.NS:       {name: State Bank of India,       folder: SBIN,       news_query: "State Bank of India SBI stock", history_query: "\"State Bank of India\" OR \"SBI share\""}
+  BHARTIARTL.NS: {name: Bharti Airtel,             folder: BHARTIARTL, news_query: "Bharti Airtel India stock", history_query: "\"Bharti Airtel\""}
+  LT.NS:         {name: Larsen & Toubro,           folder: LT,         news_query: "Larsen & Toubro L&T India stock", history_query: "\"Larsen & Toubro\" OR \"L&T share\""}
+  HINDUNILVR.NS: {name: Hindustan Unilever,        folder: HINDUNILVR, news_query: "Hindustan Unilever HUL India stock", history_query: "\"Hindustan Unilever\""}
+  ITC.NS:        {name: ITC,                       folder: ITC,        news_query: "ITC Limited India stock", history_query: "\"ITC Limited\" OR \"ITC share\""}
+
+data:
+  period: 15y
+  interval: 1d
+  raw_dir: data/raw
+  live_dir: data/live
+  live_period: 5y
+  live_ttl_minutes: 60
+
+features:
+  sequence_length: 60
+
+backtest:
+  n_folds: 6          # expanding-window walk-forward folds
+  test_size: 252      # trading days per test block (~1 year)
+  val_fraction: 0.15  # tail of each fold's development rows used for early stopping
+  embargo: 5          # rows dropped between train -> val and val -> test
+  seed: 42
+  models: [random_walk, persistence, majority, arima, xgboost, lstm]
+
+strategy:
+  signal_threshold: 0.0   # go long when predicted next-day log return > this
+  cost_per_side: 0.0012   # ~NSE delivery: STT + exchange + stamp + GST
+  risk_free_rate: 0.0
+  periods_per_year: 252
+
+models:
+  lstm:
+    units: 24
+    dropout: 0.35
+    dense_units: 8
+    learning_rate: 0.0007
+    epochs: 120
+    batch_size: 32
+    patience: 15
+  transformer:
+    d_model: 32
+    nhead: 4
+    num_layers: 2
+    dim_feedforward: 64
+    dropout: 0.1
+    dense_units: 16
+    learning_rate: 0.0005
+    weight_decay: 0.0001
+    epochs: 100
+    batch_size: 64
+    patience: 12
+  xgboost:
+    n_estimators: 600
+    learning_rate: 0.03
+    max_depth: 3
+    subsample: 0.8
+    colsample_bytree: 0.8
+    early_stopping_rounds: 50
+  arima:
+    max_p: 2
+    max_q: 2
+
+serving:
+  # Best mean net Sharpe in the walk-forward backtest (0.47 vs 0.65 for buy & hold).
+  model: xgboost
+  feature_set: news       # base | news
+  models_dir: models
+  history_bars: 90
+
+signals:
+  # Predicted moves are small (median |pred| ~0.07%), so the label band is 0.10%.
+  neutral_threshold_pct: 0.10
+
+news:
+  method: finbert           # finbert | keyword
+  score_cache: data/news/finbert_scores.parquet
+  recency_days: 21
+  min_items: 4
+  max_items: 15
+
+output:
+  results_dir: results
